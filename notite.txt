@@ -2,3 +2,10 @@ Motor A Forward: PB4 (PWM) HIGH, PC10 (DIR) LOW
 Motor A Backward: PB4 (PWM) LOW, PC10 (DIR) HIGH (PWM)
 Motor B Forward: PA7 (PWM) HIGH, PC11 (DIR) LOW  
 Motor B Backward: PA7 (PWM) LOW, PC11 (DIR) HIGH (PWM)
+
+ A-IB         →    PB4          Motor A PWM (TIM3_CH1)
+ A-IA         →    PC10         Motor A Direction
+ B-IB         →    PA7          Motor B PWM (TIM3_CH2)
+ B-IA         →    PC11         Motor B Direction
+VCC           →    Battery+     7.4V power
+GND           →    STM32 GND    Common ground

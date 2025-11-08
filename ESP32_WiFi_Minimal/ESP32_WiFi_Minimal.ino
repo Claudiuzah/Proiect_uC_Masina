@@ -17,7 +17,7 @@ WebServer server(80);
 #define STM32_SERIAL Serial2
 #define STM32_RX_PIN 16  // ESP32 GPIO16 (RX) ← STM32 PA9 (TX)
 #define STM32_TX_PIN 17  // ESP32 GPIO17 (TX) → STM32 PA10 (RX)
-#define STM32_BAUD 9600
+#define STM32_BAUD 115200  // Try higher baud rate
 
 #define LED_PIN 2
 
@@ -114,7 +114,7 @@ void setup() {
   Serial.println("[2] UART initialized:");
   Serial.println("    GPIO16 (RX) <- STM32 PA9 (TX)");
   Serial.println("    GPIO17 (TX) -> STM32 PA10 (RX)");
-  Serial.println("    Baud: 9600");
+  Serial.println("    Baud: 115200");
   
   // WiFi AP
   Serial.println("\n[3] Starting WiFi Access Point...");

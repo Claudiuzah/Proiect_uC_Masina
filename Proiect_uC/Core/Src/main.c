@@ -76,7 +76,6 @@ SPI_HandleTypeDef hspi5;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart2;
 
 SDRAM_HandleTypeDef hsdram1;
 
@@ -114,7 +113,6 @@ static void MX_LTDC_Init(void);
 static void MX_DMA2D_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
-static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
 
@@ -194,7 +192,6 @@ int main(void)
   MX_DMA2D_Init();
   MX_USART1_UART_Init();
   MX_TIM3_Init();
-  MX_USART2_UART_Init();
   MX_TouchGFX_Init();
   /* Call PreOsInit function */
   MX_TouchGFX_PreOSInit();
@@ -635,39 +632,6 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
-
-}
-
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
 
 }
 
@@ -1339,101 +1303,87 @@ void StartDefaultTask(void *argument)
   uint16_t current_speed = 900;  // High speed for weak battery
   char last_command = 'X';  // Track last movement command
   
-  printf("Task started - Ready for commands\r\n");
-  printf("Commands: W/F=Forward, S/B=Backward, A/L=Left, D/R=Right, X=Stop\r\n");
-  printf("          Q=RotateLeft, E=RotateRight, +=SpeedUp, -=SpeedDown\r\n");
-  printf("Initial speed set to: %d (90%%)\r\n", current_speed);
+  printf("Micromouse PS4 Controller Ready\r\n");
+  printf("USART1 (9600 baud): ESP32 PS4 controller\r\n");
+  printf("Commands: 1=Forward, 2=Back, 3=TurnLeft, 4=TurnRight\r\n");
+  printf("          5=RotateLeft, 6=RotateRight, 7=PWM+, 8=PWM-, 0=Stop\r\n");
+  printf("Initial speed: %d (90%%)\r\n", current_speed);
   
   /* Infinite loop */
   for(;;)
   {
-    /* Check for UART commands from ESP32 (non-blocking) */
-    if(HAL_UART_Receive(&huart1, &rx_byte, 1, 10) == HAL_OK)
+    /* Check for UART commands from ESP32 PS4 controller (non-blocking) */
+    if(HAL_UART_Receive(&huart1, &rx_byte, 1, 5) == HAL_OK)
     {
-      /* Debug: show received byte */
-      printf("RX: '%c' (0x%02X)\r\n", rx_byte, rx_byte);
-      
       /* Visual indicator - blink red LED when receiving */
       HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_SET);
       
-      /* Process command */
+      /* Process command - simple number mapping */
       switch(rx_byte)
       {
-        case 'W': case 'w':  // Forward (WASD)
-        case 'F': case 'f':  // Forward
+        case '1':  // Forward
           Motor_Forward(current_speed);
-          last_command = 'F';
+          last_command = '1';
           break;
           
-        case 'S': case 's':  // Backward (WASD)
-        case 'B': case 'b':  // Backward
+        case '2':  // Backward / Stop (backward can stop car)
           Motor_Backward(current_speed);
-          last_command = 'B';
+          last_command = '2';
           break;
           
-        case 'A': case 'a':  // Turn left (WASD)
-        case 'L': case 'l':  // Turn left
+        case '3':  // Turn left
           Motor_TurnLeft(current_speed);
-          last_command = 'L';
+          last_command = '3';
           break;
           
-        case 'D': case 'd':  // Turn right (WASD)
-        case 'R': case 'r':  // Turn right
+        case '4':  // Turn right
           Motor_TurnRight(current_speed);
-          last_command = 'R';
+          last_command = '4';
           break;
           
-        case 'Q': case 'q':  // Rotate left
+        case '5':  // Rotate in place LEFT
           Motor_RotateLeft(current_speed);
-          last_command = 'Q';
+          last_command = '5';
           break;
           
-        case 'E': case 'e':  // Rotate right
+        case '6':  // Rotate in place RIGHT
           Motor_RotateRight(current_speed);
-          last_command = 'E';
+          last_command = '6';
           break;
           
-        case 'X': case 'x':  // Stop
-          Motor_Stop();
-          last_command = 'X';
-          break;
-          
-        case '+':  // Increase speed
+        case '7':  // PWM+ (increase speed)
           if(current_speed < 900) current_speed += 100;
-          printf("Speed: %d\r\n", current_speed);
           // Re-apply last movement command with new speed
           switch(last_command) {
-            case 'F': Motor_Forward(current_speed); break;
-            case 'B': Motor_Backward(current_speed); break;
-            case 'L': Motor_TurnLeft(current_speed); break;
-            case 'R': Motor_TurnRight(current_speed); break;
-            case 'Q': Motor_RotateLeft(current_speed); break;
-            case 'E': Motor_RotateRight(current_speed); break;
+            case '1': Motor_Forward(current_speed); break;
+            case '2': Motor_Backward(current_speed); break;
+            case '3': Motor_TurnLeft(current_speed); break;
+            case '4': Motor_TurnRight(current_speed); break;
+            case '5': Motor_RotateLeft(current_speed); break;
+            case '6': Motor_RotateRight(current_speed); break;
           }
           break;
           
-        case '-':  // Decrease speed
+        case '8':  // PWM- (decrease speed)
           if(current_speed > 100) current_speed -= 100;
-          printf("Speed: %d\r\n", current_speed);
           // Re-apply last movement command with new speed
           switch(last_command) {
-            case 'F': Motor_Forward(current_speed); break;
-            case 'B': Motor_Backward(current_speed); break;
-            case 'L': Motor_TurnLeft(current_speed); break;
-            case 'R': Motor_TurnRight(current_speed); break;
-            case 'Q': Motor_RotateLeft(current_speed); break;
-            case 'E': Motor_RotateRight(current_speed); break;
+            case '1': Motor_Forward(current_speed); break;
+            case '2': Motor_Backward(current_speed); break;
+            case '3': Motor_TurnLeft(current_speed); break;
+            case '4': Motor_TurnRight(current_speed); break;
+            case '5': Motor_RotateLeft(current_speed); break;
+            case '6': Motor_RotateRight(current_speed); break;
           }
           break;
           
-        case 'T': case 't':  // Test - full speed forward
-          printf("TEST MODE: Full speed (999)!\r\n");
-          Motor_Forward(999);
-          last_command = 'F';
+        case '0':  // Stop
+          Motor_Stop();
+          last_command = '0';
           break;
           
         default:
-          printf("Unknown command: %c\r\n", rx_byte);
+          // Unknown command - ignore silently
           break;
       }
       
